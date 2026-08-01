@@ -1790,6 +1790,42 @@ Bu bölüm, bir fotonun bir sinir ağının içinde bir sayıya dönüşmeden ö
 
 ### 7.1 Sekiz kaynak ürün
 
+**Hızlı başvuru: hangi ürün hangi uydudan geliyor?**
+
+Bir jüriden gelmesi en muhtemel olgusal soru budur; bu yüzden tam olarak
+cevaplayabilmek önemlidir — özellikle de uydu *olmayan* iki kalem için.
+
+| Ürün kimliği | Platform / uydu | Cihaz | Bize verdiği |
+|---|---|---|---|
+| `MODIS/061/MOD14A1` | **Terra** (NASA EOS AM-1, Aralık 1999) | MODIS | Aktif yangın maskesi, gün t |
+| `MODIS/061/MYD14A1` | **Aqua** (NASA EOS PM-1, Mayıs 2002) | MODIS | Aktif yangın maskesi, gün t |
+| `MODIS/061/MOD13Q1` | **Terra** | MODIS | NDVI (bitki örtüsü) |
+| `MODIS/061/MOD11A1` | **Terra** | MODIS | Arazi yüzey sıcaklığı |
+| `MODIS/061/MCD12Q1` | **Terra + Aqua** birleşik | MODIS | IGBP arazi örtüsü / yakıt sınıfı |
+| `USGS/SRTMGL1_003` | **Space Shuttle Endeavour**, STS-99 görevi (Şubat 2000) | SRTM radar interferometresi | Yükseklik, eğim, bakı |
+| `UCSB-CHG/CHIRPS/DAILY` | *Harmanlanmış*: jeostasyoner uydular (GOES, Meteosat) **artı yer yağış istasyonları** | termal kızılötesi + istasyon | Yağış |
+| `ECMWF/ERA5_LAND/DAILY_AGGR` | **Uydu değil** — ECMWF yeniden analiz modeli | çok sayıda gözlemi özümser | Hava sıcaklığı, çiğ, rüzgâr u/v, toprak nemi |
+
+Yani doğrudan bağlı olduğumuz uydular **Terra** ve **Aqua**'dır; ikisi de MODIS
+cihazını taşır. Buna ek olarak, Şubat 2000'de Space Shuttle Endeavour ile uçurulan
+tarihsel **SRTM** görevi vardır (arazi statik olduğu için 2000 yılı ölçümü hâlâ
+geçerlidir).
+
+İki kalem sıkça yanlış tarif edilir ve bunu sunumda yanlış söylemek, bir uzmanın
+kolayca yakalayacağı türden bir hatadır:
+
+- **ERA5-Land bir uydu değildir.** Bir *yeniden analizdir* (reanalysis): geçmişe
+  doğru çalıştırılan, o dönemde mevcut olan her gözlemle (uydular, radyosondalar,
+  uçaklar, yer istasyonları) kısıtlanan bir hava modeli. Bir ölçüm değil, fiziksel
+  olarak tutarlı bir atmosfer tahmini verir.
+- **CHIRPS de saf uydu ürünü değildir.** Jeostasyoner uydulardan gelen bulut tepesi
+  sıcaklığını (termal kızılötesi) yerdeki yağış istasyonu kayıtlarıyla harmanlar.
+
+Tek cümlelik dürüst cevap: *"Yangın ve bitki örtüsüyle ilgili her şey için Terra ve
+Aqua, arazi için SRTM, hava için de bir yeniden analiz ve harmanlanmış bir yağış
+ürünü."*
+
+
 | Değişken | GEE koleksiyonu | Doğal çözünürlük | Fizikteki rolü |
 |---|---|---|---|
 | Aktif yangın (Terra) | `MODIS/061/MOD14A1` | 1 km / günlük | Bugünün yangın maskesi; hedefin kaynağı |

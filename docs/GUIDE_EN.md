@@ -1789,6 +1789,42 @@ This section walks through what actually happens to a photon before it becomes a
 
 ### 7.1 The eight source products
 
+**Quick reference: which satellite does each product come from?**
+
+This is the single most likely factual question from a jury, so it is worth being
+able to answer it precisely — including the two entries that are *not* satellites.
+
+| Product ID | Platform / satellite | Instrument | Gives us |
+|---|---|---|---|
+| `MODIS/061/MOD14A1` | **Terra** (NASA EOS AM-1, launched Dec 1999) | MODIS | Active fire mask, day t |
+| `MODIS/061/MYD14A1` | **Aqua** (NASA EOS PM-1, launched May 2002) | MODIS | Active fire mask, day t |
+| `MODIS/061/MOD13Q1` | **Terra** | MODIS | NDVI (vegetation) |
+| `MODIS/061/MOD11A1` | **Terra** | MODIS | Land surface temperature |
+| `MODIS/061/MCD12Q1` | **Terra + Aqua combined** | MODIS | IGBP land cover / fuel class |
+| `USGS/SRTMGL1_003` | **Space Shuttle Endeavour**, mission STS-99 (Feb 2000) | SRTM radar interferometer | Elevation, slope, aspect |
+| `UCSB-CHG/CHIRPS/DAILY` | *Blended*: geostationary satellites (GOES, Meteosat) **plus ground rain gauges** | thermal infrared + stations | Precipitation |
+| `ECMWF/ERA5_LAND/DAILY_AGGR` | **Not a satellite** — ECMWF reanalysis model | assimilates many observations | Air temp, dewpoint, wind u/v, soil moisture |
+
+So the satellites we depend on directly are **Terra** and **Aqua**, both carrying
+the MODIS instrument, plus the historical **SRTM** mission flown on Space Shuttle
+Endeavour in February 2000 (the terrain is static, so a 2000 survey is still
+current).
+
+Two entries are commonly misdescribed, and getting them wrong in a presentation
+would be an easy thing for a specialist to catch:
+
+- **ERA5-Land is not a satellite.** It is a *reanalysis*: a weather model run
+  backwards over the past, constrained by every observation available at the time
+  (satellites, weather balloons, aircraft, surface stations). It gives a physically
+  consistent estimate of the atmosphere, not a measurement.
+- **CHIRPS is not purely satellite either.** It blends thermal-infrared cloud-top
+  temperature from geostationary satellites with rain-gauge records on the ground.
+
+The honest one-sentence answer is: *"Terra and Aqua for everything fire and
+vegetation related, SRTM for terrain, plus a reanalysis and a blended
+precipitation product for the weather."*
+
+
 | Variable | GEE collection | Native resolution | Role in the physics |
 |---|---|---|---|
 | Active fire (Terra) | `MODIS/061/MOD14A1` | 1 km / daily | Today's fire mask; source of the target |
