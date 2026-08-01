@@ -1,0 +1,789 @@
+<title>IGNIS — Yangın yarın nereye gidecek?</title>
+<style>
+  /* ---------------------------------------------------------------
+     IGNIS sunum sayfası
+     Kimlik: 1 km'lik MODIS pikseli. Uzaydan bir yangın alev değildir;
+     parlaklık sıcaklığı eşiğini geçmiş kaba bir ızgara hücresidir.
+     Renk: soğuk cihaz / sıcak anomali — konunun kendi fiziği.
+     --------------------------------------------------------------- */
+
+  :root {
+    color-scheme: light dark;
+
+    --ember:        #D9483B;
+    --ember-soft:   #E8825F;
+    --instrument:   #0E86A0;
+
+    --ground:       #EDF1F4;
+    --paper:        #FAFCFD;
+    --panel:        #0D131C;
+    --panel-2:      #131C28;
+
+    --ink:          #141A22;
+    --ink-2:        #45525F;
+    --ink-3:        #6F7E8C;
+    --rule:         #D3DBE2;
+    --rule-strong:  #B6C2CC;
+
+    --on-panel:     #E6EDF3;
+    --on-panel-2:   #93A4B4;
+    --on-panel-3:   #5C6E7E;
+    --panel-rule:   #223041;
+
+    --measure: 34rem;
+
+    --serif: ui-serif, "Iowan Old Style", "Source Serif 4", "Source Serif Pro",
+             Charter, Georgia, Cambria, "Times New Roman", serif;
+    --mono:  ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
+             "Roboto Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ember:       #E4614F;
+      --ember-soft:  #EF9077;
+      --instrument:  #22A0BC;
+
+      --ground:      #0A0F16;
+      --paper:       #0F161F;
+      --panel:       #070B11;
+      --panel-2:     #0D141D;
+
+      --ink:         #E4EBF2;
+      --ink-2:       #A2B1BF;
+      --ink-3:       #74838F;
+      --rule:        #1E2833;
+      --rule-strong: #2C3948;
+
+      --on-panel:    #E4EBF2;
+      --on-panel-2:  #8C9DAD;
+      --on-panel-3:  #556676;
+      --panel-rule:  #1B2634;
+    }
+  }
+
+  /* Görüntüleyicinin teması kök öğeye data-theme basar; her iki yönde de
+     medya sorgusunu geçmelidir. */
+  :root[data-theme="light"] {
+    --ember: #D9483B; --ember-soft: #E8825F; --instrument: #0E86A0;
+    --ground: #EDF1F4; --paper: #FAFCFD; --panel: #0D131C; --panel-2: #131C28;
+    --ink: #141A22; --ink-2: #45525F; --ink-3: #6F7E8C;
+    --rule: #D3DBE2; --rule-strong: #B6C2CC;
+    --on-panel: #E6EDF3; --on-panel-2: #93A4B4; --on-panel-3: #5C6E7E;
+    --panel-rule: #223041;
+  }
+  :root[data-theme="dark"] {
+    --ember: #E4614F; --ember-soft: #EF9077; --instrument: #22A0BC;
+    --ground: #0A0F16; --paper: #0F161F; --panel: #070B11; --panel-2: #0D141D;
+    --ink: #E4EBF2; --ink-2: #A2B1BF; --ink-3: #74838F;
+    --rule: #1E2833; --rule-strong: #2C3948;
+    --on-panel: #E4EBF2; --on-panel-2: #8C9DAD; --on-panel-3: #556676;
+    --panel-rule: #1B2634;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 1.0625rem;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: var(--measure); margin: 0 auto; padding: 0 1.5rem; }
+
+  /* --- tipografi --- */
+  h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 600; }
+  h1 { font-size: clamp(2.1rem, 6.4vw, 3.3rem); line-height: 1.06; letter-spacing: -0.022em; }
+  h2 { font-size: clamp(1.5rem, 4vw, 1.95rem); line-height: 1.16; letter-spacing: -0.014em; }
+  h3 { font-size: 1.11rem; line-height: 1.3; }
+  p  { margin: 0; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0;
+  }
+  .eyebrow.on-panel { color: var(--on-panel-3); }
+
+  .lede { font-size: 1.21rem; line-height: 1.5; color: var(--ink-2); }
+  .small { font-size: 0.93rem; color: var(--ink-2); }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  strong { font-weight: 600; color: var(--ink); }
+  em.term { font-style: normal; color: var(--ember); font-weight: 600; }
+
+  /* --- akış --- */
+  section { padding: 4.2rem 0; border-top: 1px solid var(--rule); }
+  section:first-of-type { border-top: 0; }
+  .stack { display: flex; flex-direction: column; gap: 1.15rem; }
+  .stack-lg { display: flex; flex-direction: column; gap: 2.2rem; }
+
+  /* --- cihaz paneli: ölçülmüş olanın gösterildiği yer --- */
+  .panel {
+    background: var(--panel);
+    color: var(--on-panel);
+    border-top: 1px solid var(--panel-rule);
+    border-bottom: 1px solid var(--panel-rule);
+    padding: 3.2rem 0;
+    background-image:
+      linear-gradient(var(--panel-rule) 1px, transparent 1px),
+      linear-gradient(90deg, var(--panel-rule) 1px, transparent 1px);
+    background-size: 34px 34px;
+    background-position: -1px -1px;
+  }
+  .panel .wrap > * { position: relative; }
+  .panel h2, .panel h3 { color: var(--on-panel); }
+  .panel p { color: var(--on-panel-2); }
+  .panel .small { color: var(--on-panel-2); }
+
+  /* --- kahraman --- */
+  .hero { padding: 5rem 0 3.4rem; }
+  .hero h1 { margin-top: 1rem; }
+  .hero .lede { margin-top: 1.3rem; }
+
+  .grid-figure { display: flex; flex-direction: column; gap: 0.9rem; align-items: center; }
+  canvas { display: block; max-width: 100%; height: auto; image-rendering: pixelated; }
+  .canvas-frame {
+    border: 1px solid var(--panel-rule);
+    background: var(--panel-2);
+    padding: 10px;
+    line-height: 0;
+  }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 1.1rem;
+    font-family: var(--mono); font-size: 0.73rem; letter-spacing: 0.04em;
+    color: var(--on-panel-2);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 0.42rem; }
+  .swatch { width: 11px; height: 11px; border-radius: 2px; flex: none; }
+
+  /* --- istatistik kutucukları --- */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.2rem, 1fr)); gap: 1px;
+           background: var(--rule); border: 1px solid var(--rule); }
+  .tile { background: var(--paper); padding: 1.15rem 1rem; display: flex; flex-direction: column; gap: 0.28rem; }
+  .panel .tiles { background: var(--panel-rule); border-color: var(--panel-rule); }
+  .panel .tile { background: var(--panel-2); }
+  .tile b {
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 1.62rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1;
+  }
+  .tile .k { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.11em;
+             text-transform: uppercase; color: var(--ink-3); }
+  .panel .tile .k { color: var(--on-panel-3); }
+  .tile .n { font-size: 0.84rem; color: var(--ink-2); }
+  .panel .tile .n { color: var(--on-panel-2); }
+  .t-ember b { color: var(--ember); }
+  .t-instr b { color: var(--instrument); }
+
+  /* --- karşılaştırma grafiği --- */
+  .chart { display: flex; flex-direction: column; gap: 0.55rem; }
+  .row { display: grid; grid-template-columns: 10.5rem 1fr; gap: 0.85rem; align-items: center; }
+  .row .name { font-family: var(--mono); font-size: 0.76rem; color: var(--on-panel-2);
+               text-align: right; letter-spacing: 0.02em; }
+  .row.is-model .name { color: var(--on-panel); }
+  .track { position: relative; height: 26px; display: flex; align-items: center; }
+  .bar {
+    height: 15px; border-radius: 0 4px 4px 0; background: var(--on-panel-3);
+    transition: width 900ms cubic-bezier(.22,.61,.36,1); width: 0;
+  }
+  .row.is-model .bar { background: var(--ember); }
+  .row:focus-within .bar, .row:hover .bar { filter: brightness(1.14); }
+  .val { font-family: var(--mono); font-variant-numeric: tabular-nums;
+         font-size: 0.79rem; color: var(--on-panel-2); margin-left: 0.6rem; white-space: nowrap; }
+  .row.is-model .val { color: var(--ember); }
+  .row:hover .name, .row:focus-within .name { color: var(--on-panel); }
+
+  .chart-note {
+    border-left: 2px solid var(--ember); padding-left: 0.95rem;
+    font-size: 0.95rem; color: var(--on-panel-2);
+  }
+
+  /* --- anahtar/değer listesi --- */
+  .kv { border-top: 1px solid var(--rule); }
+  .kv div { display: grid; grid-template-columns: 8.2rem 1fr; gap: 1rem;
+            padding: 0.72rem 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .kv dt { font-family: var(--mono); font-size: 0.71rem; letter-spacing: 0.08em;
+           text-transform: uppercase; color: var(--ink-3); margin: 0; }
+  .kv dd { margin: 0; font-size: 0.97rem; }
+  .panel .kv, .panel .kv div { border-color: var(--panel-rule); }
+  .panel .kv dt { color: var(--on-panel-3); }
+  .panel .kv dd { color: var(--on-panel-2); }
+
+  /* --- kanal rozetleri --- */
+  .chips { display: flex; flex-wrap: wrap; gap: 0.38rem; }
+  .chip {
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.02em;
+    padding: 0.25rem 0.5rem; border: 1px solid var(--panel-rule);
+    border-radius: 3px; color: var(--on-panel-2); background: var(--panel-2);
+  }
+  .chip.hot { color: var(--ember); border-color: color-mix(in srgb, var(--ember) 45%, transparent); }
+  .chip.cool { color: var(--instrument); border-color: color-mix(in srgb, var(--instrument) 45%, transparent); }
+
+  /* --- karşılaştırmalı iki kutu --- */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule);
+         border: 1px solid var(--rule); }
+  .duo > div { background: var(--paper); padding: 1.25rem 1.15rem; display: flex;
+               flex-direction: column; gap: 0.5rem; }
+  .duo .h { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.11em;
+            text-transform: uppercase; color: var(--ink-3); }
+  .yes { color: var(--instrument); font-weight: 600; }
+  .no  { color: var(--ember); font-weight: 600; }
+
+  /* --- yol haritası --- */
+  ol.road { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+  ol.road li {
+    counter-increment: step; position: relative; padding: 0 0 1.5rem 2.6rem;
+    border-left: 1px solid var(--rule); margin-left: 0.6rem;
+  }
+  ol.road li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  ol.road li::before {
+    content: counter(step); position: absolute; left: -0.72rem; top: -0.1rem;
+    width: 1.44rem; height: 1.44rem; border-radius: 50%;
+    background: var(--ground); border: 1px solid var(--rule-strong);
+    font-family: var(--mono); font-size: 0.7rem; color: var(--ink-2);
+    display: grid; place-items: center;
+  }
+  ol.road li.now::before { background: var(--ember); border-color: var(--ember); color: #fff; }
+  ol.road h3 { margin-bottom: 0.3rem; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  th, td { padding: 0.6rem 0.7rem; text-align: right; border-bottom: 1px solid var(--rule); }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.08em;
+       text-transform: uppercase; color: var(--ink-3); font-weight: 400; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .scroll-x { overflow-x: auto; }
+
+  footer { padding: 3rem 0 4rem; color: var(--ink-3); font-size: 0.87rem; }
+
+  a { color: var(--ember); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--instrument); outline-offset: 3px; border-radius: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    .bar { transition: none; }
+  }
+  @media (max-width: 33rem) {
+    .row { grid-template-columns: 1fr; gap: 0.2rem; }
+    .row .name { text-align: left; }
+    .duo { grid-template-columns: 1fr; }
+    .kv div { grid-template-columns: 1fr; gap: 0.1rem; }
+  }
+</style>
+
+<!-- ================= KAHRAMAN ================= -->
+<section class="hero">
+  <div class="wrap stack">
+    <p class="eyebrow">IGNIS · Antalya Yusuf Ziya Öner Fen Lisesi</p>
+    <h1>Yanan bir orman yangını yarın nereye gidecek?</h1>
+    <p class="lede">
+      Bu soruyu uydu verisiyle cevaplamaya çalışıyoruz. Şu ana kadar
+      öğrendiğimiz en önemli şey, modelimizin henüz çalışmadığı —
+      ve bunun nedenini ölçtük.
+    </p>
+  </div>
+</section>
+
+<!-- ================= PANEL: PİKSEL ================= -->
+<div class="panel">
+  <div class="wrap stack-lg">
+    <div class="stack">
+      <p class="eyebrow on-panel">Başlangıç noktası</p>
+      <h2>Uzaydan bir yangın, alev değildir</h2>
+      <p>
+        Gözünüzde canlanan alevleri unutun. Uydunun gördüğü şey bir ızgaradır.
+        Her hücre yeryüzünde <span class="mono">1&nbsp;km&nbsp;×&nbsp;1&nbsp;km</span> —
+        yaklaşık 140 futbol sahası. Bir hücre ya “burada anormal sıcaklık var”
+        der ya da demez. Arası yoktur.
+      </p>
+      <p>
+        Aşağıdaki kare, modelimizin gördüğü tek bir veri parçası:
+        <span class="mono">65&nbsp;×&nbsp;65</span> hücre, yani
+        <span class="mono">4&nbsp;225</span> piksel. İçindeki yangın da bu.
+      </p>
+    </div>
+
+    <div class="grid-figure">
+      <div class="canvas-frame">
+        <canvas id="patch" width="520" height="520"
+                role="img"
+                aria-label="65 çarpı 65 piksellik bir yama. Ortada yaklaşık 12 hücre
+                            bugün yanıyor olarak işaretli, birkaç hücre de ertesi gün
+                            yanacak olarak işaretli."></canvas>
+      </div>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--ember)"></i> bugün yanan piksel</span>
+        <span><i class="swatch" style="background:var(--instrument)"></i> yarın yanacak</span>
+        <span><i class="swatch" style="background:#1b2634"></i> yanmayan arazi</span>
+      </div>
+    </div>
+
+    <div class="tiles">
+      <div class="tile t-ember">
+        <span class="k">Yanan piksel</span>
+        <b>0,2686<span style="font-size:.6em">%</span></b>
+        <span class="n">Tüm piksellerin oranı</span>
+      </div>
+      <div class="tile">
+        <span class="k">Oran</span>
+        <b>372 : 1</b>
+        <span class="n">Yanmayana karşı yanan</span>
+      </div>
+      <div class="tile">
+        <span class="k">Ortalama</span>
+        <b>12,3</b>
+        <span class="n">4 225 pikselin kaçı yanıyor</span>
+      </div>
+    </div>
+
+    <p class="small">
+      Bu oran, projenin tamamını şekillendiren sayıdır. Hiçbir şey yapmayıp
+      “hiçbir yer yanmayacak” diyen bir model
+      <strong style="color:var(--on-panel)">%99,73</strong> doğruluk alır.
+      Bu yüzden bu sayfada “doğruluk” kelimesini bir daha kullanmayacağız.
+    </p>
+  </div>
+</div>
+
+<!-- ================= TÜRKİYE ================= -->
+<section>
+  <div class="wrap stack-lg">
+    <div class="stack">
+      <p class="eyebrow">Neden Türkiye</p>
+      <h2>Akdeniz yangın rejimi</h2>
+      <p>
+        Türkiye, yaz ayları sıcak ve kurak geçen, kızılçam
+        (<em style="font-style:italic">Pinus brutia</em>) ormanlarıyla kaplı bir
+        coğrafyada. Kızılçam reçinelidir ve tepe yangını taşır: alev ağaçların
+        tepesinden ilerler, en hızlı ve en yıkıcı yangın türüdür.
+      </p>
+      <p>
+        Yangın mevsimi kabaca <strong>Haziran–Ekim</strong> arasıdır. Veri
+        setimiz bu pencereyi 2019’dan bugüne kadar tarıyor.
+      </p>
+      <dl class="kv">
+        <div><dt>Çalışma alanı</dt><dd>Türkiye geneli, 1 km çözünürlük</dd></div>
+        <div><dt>Koordinat</dt><dd class="mono">EPSG:32635 — UTM dilim 35N</dd></div>
+        <div><dt>Dönem</dt><dd>2019 – 2026, yangın mevsimleri</dd></div>
+        <div><dt>Gün sayısı</dt><dd class="mono">~1 131 yangın günü</dd></div>
+      </dl>
+      <p class="small">
+        Afet yönetiminin dört evresi vardır: <strong>zarar azaltma</strong>,
+        <strong>hazırlık</strong>, <strong>müdahale</strong>,
+        <strong>iyileştirme</strong>. IGNIS yalnızca üçüncüsüne bakıyor —
+        yangın çıktıktan sonra, ekipler sahadayken.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PANEL: UYDU ================= -->
+<div class="panel">
+  <div class="wrap stack-lg">
+    <div class="stack">
+      <p class="eyebrow on-panel">Ölçüm</p>
+      <h2>Uydu yangını nasıl “görür”?</h2>
+      <p>
+        Görmez — <strong style="color:var(--on-panel)">ölçer</strong>. Her sıcak
+        cisim kızılötesi ışıma yayar ve ne kadar sıcaksa o kadar kısa dalga boyunda
+        yayar. NASA’nın <span class="mono">MODIS</span> cihazı bu ışımayı okur ve
+        “bu piksel çevresine göre anormal sıcak mı?” diye sorar.
+      </p>
+      <p>
+        Cevap üç güven düzeyiyle gelir. Biz <span class="mono">7</span>,
+        <span class="mono">8</span> ve <span class="mono">9</span>’un üçünü de
+        yangın sayıyoruz: yalnızca en yüksek güveni kabul etmek, gerçek yangınların
+        çoğunu elemek anlamına gelirdi.
+      </p>
+      <dl class="kv">
+        <div><dt>Uydular</dt><dd>Terra ve Aqua — günde ikişer geçiş</dd></div>
+        <div><dt>Ölçtüğü</dt><dd>Parlaklık sıcaklığı, kızılötesi</dd></div>
+        <div><dt>Piksel</dt><dd class="mono">1 km × 1 km</dd></div>
+        <div><dt>Eşik</dt><dd class="mono">FireMask ≥ 7</dd></div>
+      </dl>
+    </div>
+
+    <div class="stack">
+      <h3>Modele verdiğimiz 21 kanal</h3>
+      <p class="small">
+        Her piksel için, o günün koşulları. Sıcak renkli olanlar yangının kendisi,
+        soğuk renkli olanlar onu yönlendiren çevre.
+      </p>
+      <div class="chips">
+        <span class="chip cool">ndvi</span><span class="chip cool">lst</span>
+        <span class="chip cool">air_temp</span><span class="chip cool">humidity</span>
+        <span class="chip cool">wind_speed</span><span class="chip cool">wind_u</span>
+        <span class="chip cool">wind_v</span><span class="chip cool">precip</span>
+        <span class="chip cool">soil_moisture</span><span class="chip cool">elevation</span>
+        <span class="chip cool">slope</span><span class="chip cool">aspect_sin</span>
+        <span class="chip cool">aspect_cos</span><span class="chip">yakıt × 6</span>
+        <span class="chip hot">fire</span><span class="chip">valid</span>
+      </div>
+      <p class="small">
+        <span class="mono">aspect</span> yani bakı, pusula yönüdür: 359° ile 1°
+        arazide yan yanadır ama sayı olarak birbirinden çok uzaktır. Bu yüzden
+        açıyı doğrudan vermeyip sinüs ve kosinüsüne ayırıyoruz — çemberi çember
+        olarak anlatmak için.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODEL ================= -->
+<section>
+  <div class="wrap stack-lg">
+    <div class="stack">
+      <p class="eyebrow">Model</p>
+      <h2>U-Net: haritayı haritaya çeviren ağ</h2>
+      <p>
+        Sıradan bir sinir ağı bir görüntüye tek bir etiket verir: “kedi”.
+        Bizim ihtiyacımız olan bu değil — <strong>her piksel için ayrı bir
+        cevap</strong> lazım. Buna bölütleme (segmentation) deniyor.
+      </p>
+      <p>
+        U-Net iki yarımdan oluşur. İnen yarım görüntüyü adım adım küçültüp
+        “burada geniş ölçekte ne oluyor” bilgisini çıkarır; çıkan yarım onu tekrar
+        büyütüp piksel piksel haritaya döker. İkisi arasındaki
+        <em class="term">atlama bağlantıları</em>, keskin yangın cephesini
+        taşır — onlar olmadan çıktı bulanık bir lekeye döner.
+      </p>
+      <dl class="kv">
+        <div><dt>Girdi</dt><dd class="mono">32 × 32 × 21</dd></div>
+        <div><dt>Derinlik</dt><dd class="mono">3 — 32 → 64 → 128, darboğaz 256</dd></div>
+        <div><dt>Parametre</dt><dd class="mono">~1,9 milyon</dd></div>
+        <div><dt>Çıktı</dt><dd class="mono">32 × 32 olasılık haritası</dd></div>
+      </dl>
+      <p class="small">
+        Hedefimiz “yarın yanacak mı” değil, <strong>“önümüzdeki 24–48 saatte
+        yanacak mı”</strong>. Nedenini birazdan göreceksiniz.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PANEL: DÜRÜST SONUÇ ================= -->
+<div class="panel">
+  <div class="wrap stack-lg">
+    <div class="stack">
+      <p class="eyebrow on-panel">Ölçülmüş sonuç</p>
+      <h2>Modelimiz şu anda kaybediyor</h2>
+      <p>
+        Bir modelin skoru, tek başına hiçbir şey ifade etmez. Aşması gereken
+        basit bir eşik olmalı. Bizimki şu: <strong style="color:var(--on-panel)">“yarın,
+        bugünle aynı olacak.”</strong> Tek satırlık, parametresiz, eğitimsiz bir kural.
+      </p>
+      <p>
+        Ölçtük. Bu kural bizim modelimizi yeniyor.
+      </p>
+    </div>
+
+    <div class="chart" id="chart" aria-hidden="true">
+      <div class="row is-model">
+        <span class="name">U-Net modelimiz</span>
+        <span class="track"><i class="bar" data-v="0.0165"></i><span class="val">0,0165</span></span>
+      </div>
+      <div class="row">
+        <span class="name">“yarın = bugün”</span>
+        <span class="track"><i class="bar" data-v="0.0306"></i><span class="val">0,0306</span></span>
+      </div>
+    </div>
+
+    <div class="scroll-x">
+      <table>
+        <caption class="small" style="text-align:left;padding-bottom:.6rem;color:var(--on-panel-2)">
+          v1 arşivi üzerinde ölçüldü — 45 parça / 1 054 yama.
+        </caption>
+        <thead>
+          <tr><th scope="col">Ölçüt</th><th scope="col">Model</th><th scope="col">“Yarın = bugün”</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>IoU — alan örtüşmesi</td><td class="num" style="color:var(--ember)">0,0165</td><td class="num">0,0306</td></tr>
+          <tr><td>F1</td><td class="num" style="color:var(--ember)">0,0324</td><td class="num">0,0595</td></tr>
+          <tr><td>AUC-PR</td><td class="num">0,0210</td><td class="num">—</td></tr>
+          <tr><td>ROC-AUC</td><td class="num">0,8468</td><td class="num">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="chart-note">
+      <p style="color:var(--on-panel-2)">
+        <strong style="color:var(--on-panel)">Peki ya 0,8468?</strong>
+        ROC-AUC yüksek görünüyor çünkü onu ezici çoğunluktaki “yanmayan” pikseller
+        belirliyor — her yanan piksele karşılık 372 yanmayan var. Seyrek bir olayı
+        ölçerken dürüst sayı <span class="mono">AUC-PR</span>’dir ve onun rastgele
+        tabanı zaten <span class="mono">0,0027</span>. Yani 0,0210 sanıldığı kadar
+        uzak değil — ama iyi de değil.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= NEDEN ================= -->
+<section>
+  <div class="wrap stack-lg">
+    <div class="stack">
+      <p class="eyebrow">Teşhis</p>
+      <h2>Neden kaybediyoruz</h2>
+      <p>
+        Bunu bir başarısızlık olarak değil, bir ölçüm sonucu olarak görüyoruz.
+        Beş neden bulduk; ikisi başlangıçta farkında bile olmadığımız şeylerdi.
+      </p>
+    </div>
+
+    <div class="stack">
+      <h3>1. Etiketimiz büyük ölçüde uydu şansını kodluyor</h3>
+      <p>
+        En ciddi sorun bu. Yamalarımızın <strong>%58,9’unda</strong> ertesi gün
+        <em>hiç</em> yangın pikseli yok — oysa aynı yamada bugün ortalama 12,3
+        piksel yanıyor. Yangın bir günde sönmedi. Uydu o an bulutun arkasından
+        geçti, ya da sıcaklık eşiğin altında kaldı.
+      </p>
+      <p class="small">
+        Ağı bunu tekrar etmeye eğitirsek, ona yangın davranışını değil
+        <strong>yörünge geometrisini</strong> tahmin etmeyi öğretiriz. Çözüm:
+        hedefi “yarın” yerine “önümüzdeki 24–48 saat” yaptık.
+      </p>
+    </div>
+
+    <div class="stack">
+      <h3>2. Girdileri ölçeklemiyorduk</h3>
+      <div class="duo">
+        <div>
+          <span class="h">Yükseklik</span>
+          <p class="mono" style="font-size:1.3rem;color:var(--ember)">515,44</p>
+          <p class="small">standart sapma — en yüksek değer 4 978</p>
+        </div>
+        <div>
+          <span class="h">Toprak nemi</span>
+          <p class="mono" style="font-size:1.3rem;color:var(--instrument)">0,07</p>
+          <p class="small">standart sapma</p>
+        </div>
+      </div>
+      <p class="small">
+        Bir evrişim katmanı bütün kanalları toplar. Aralarında 7 000 kat fark
+        varken ağ pratikte yalnızca yüksekliği ve bakıyı görüyordu; nem, bitki
+        örtüsü ve rüzgâr gürültüde kayboluyordu. Artık her kanal aynı ölçeğe
+        çekiliyor — ve bu istatistikler <strong>yalnızca eğitim verisinden</strong>
+        hesaplanıyor, aksi hâlde sınava çalışırken cevap anahtarına bakmış oluruz.
+      </p>
+    </div>
+
+    <div class="stack">
+      <h3>3. Her yamanın ~%15’i uydurma sıfırdı</h3>
+      <p class="small">
+        Veri üretirken gözlenmemiş her yere sıfır yazıyorduk. Böylece
+        “bağıl nem %0” ile “bu piksel hiç ölçülmedi” ağ için aynı şey oluyordu.
+        Artık her yamada, hangi piksellerin gerçekten gözlendiğini söyleyen ayrı
+        bir <span class="mono">valid</span> katmanı var; ölçülmemiş pikseller
+        eğitime hiç katılmıyor.
+      </p>
+      <p class="small">
+        <strong>Bu düzeltmeyi doğruladık:</strong> yeni arşivde çevresel bantların
+        sıfır oranları artık birbirinden farklı (%3,55 – %12,11). Eskiden hepsi
+        aynı orandaydı — uydurma sıfırın parmak izi buydu.
+      </p>
+    </div>
+
+    <div class="stack">
+      <h3>4 ve 5. Yama çok büyüktü, değerlendirme kendi verisini okuyordu</h3>
+      <p class="small">
+        4 225 pikselin 12’si yanarken ağın çoğu emeği boş araziye gidiyordu;
+        artık merkezdeki 32 × 32’yi kullanıyoruz. Ve eski değerlendirme kodu,
+        modelin eğitildiği günler dâhil bütün arşivi okuyordu — yani yukarıdaki
+        kötü sayılar bile aslında <strong>iyimserdi</strong>. Yeni kod yalnızca
+        modelin hiç görmediği yılları okuyor.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= YOL HARİTASI ================= -->
+<section>
+  <div class="wrap stack-lg">
+    <div class="stack">
+      <p class="eyebrow">Bundan sonra</p>
+      <h2>Yol haritası</h2>
+    </div>
+    <ol class="road">
+      <li class="now">
+        <h3>Yeniden kurulan hattı eğitmek</h3>
+        <p class="small">
+          Ölçekleme, <span class="mono">valid</span> katmanı, geniş hedef, yıl
+          bazlı bölme ve kalibre edilmiş eşik ile. Kabul kriteri tek ve net:
+          <strong>“yarın = bugün” kuralını geçmek.</strong> Geçemezse
+          sayıyı güzelleştirmeyeceğiz, nedenini araştıracağız.
+        </p>
+      </li>
+      <li>
+        <h3>OGM’den yangın sınırı verisi istemek</h3>
+        <p class="small">
+          Asıl tavan burada. Hiçbir model, etiketinin tarif edebildiğinden iyi
+          tahmin edemez. Orman Genel Müdürlüğü’nün yangın çevre kayıtları
+          <em>ölçülmüş</em>tür, uydudan çıkarsanmış değil. Onlara bir çözüm
+          sunmaya değil, <strong>veri istemeye</strong> gideceğiz.
+        </p>
+      </li>
+      <li>
+        <h3>IAC 2026 — Antalya</h3>
+        <p class="small">
+          Bildirimiz 77. Uluslararası Astronotik Kongresi’nin Dünya Gözlem
+          Sempozyumu’na kabul edildi. 5–9 Ekim 2026, Antalya — yani yangınları
+          çalıştığımız şehirde.
+        </p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ================= KAPANIŞ ================= -->
+<div class="panel">
+  <div class="wrap stack">
+    <p class="eyebrow on-panel">Neden böyle anlatıyoruz</p>
+    <h2 style="max-width:26rem">Kaybettiğini söyleyen bir ekip, kazandığını söyleyenden daha güvenilirdir.</h2>
+    <p>
+      Bu sayfadaki her sayı ölçüldü. Hiçbiri tahmin, yuvarlama veya iyimser
+      yorum değil. Model temel çizgiyi geçene kadar IGNIS’i çalışan bir tahmin
+      sistemi olarak sunmuyoruz — çünkü yangın tahmini, tahliye kararlarının
+      alındığı bir alan.
+    </p>
+    <p class="small">
+      Bugün savunabildiğimiz şey şu: yeniden üretilebilir bir veri hattı ve
+      dürüstçe raporlanmış bir temel çizgi.
+    </p>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap stack">
+    <p>
+      <strong>IGNIS</strong> · Antalya Yusuf Ziya Öner Fen Lisesi · altı öğrenci<br>
+      Bildiri: <span class="mono">IAC-26,B1,IP,107,x110901</span> — IAF Dünya Gözlem Sempozyumu<br>
+      Kod ve belgeler: <span class="mono">github.com/WhiteFoxYT/ignis-ai</span>
+    </p>
+    <p class="small">
+      Sayılar v1 arşivi üzerinde ölçülmüştür (45 parça / 1 054 yama).
+      Yeniden kurulan hattın sonuçları, ayrılmış test bölmesinde ölçüldüğünde
+      buraya eklenecektir.
+    </p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---- 65x65 yama ---- */
+  var cv = document.getElementById("patch");
+  if (cv) {
+    var ctx = cv.getContext("2d");
+    var N = 65, S = cv.width / N;
+
+    function css(v) {
+      return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    }
+
+    // Sabit bir "yangın": merkeze yakın, rüzgârla kuzeydoğuya uzanan bir küme.
+    // Deterministik — her yüklemede aynı, çünkü bu bir veri şekli, süsleme değil.
+    var today = [
+      [31,30],[32,30],[32,31],[33,31],[33,32],[34,31],[34,32],
+      [35,32],[35,33],[36,33],[33,30],[34,33]
+    ];
+    var next = [[36,34],[37,34],[35,34],[37,35],[36,32],[38,35]];
+
+    function key(a){ return a[0]+","+a[1]; }
+    var todaySet = {}, nextSet = {};
+    today.forEach(function(c){ todaySet[key(c)] = 1; });
+    next.forEach(function(c){ nextSet[key(c)] = 1; });
+
+    function draw(reveal) {
+      var ember = css("--ember") || "#D9483B";
+      var instr = css("--instrument") || "#0E86A0";
+      var grid  = css("--panel-rule") || "#223041";
+      var base  = css("--panel-2") || "#131C28";
+
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      ctx.fillStyle = base;
+      ctx.fillRect(0, 0, cv.width, cv.height);
+
+      for (var y = 0; y < N; y++) {
+        for (var x = 0; x < N; x++) {
+          var k = x + "," + y, fill = null;
+          if (todaySet[k]) fill = ember;
+          else if (reveal && nextSet[k]) fill = instr;
+          if (fill) {
+            ctx.fillStyle = fill;
+            // 2px yüzey boşluğu: bitişik dolgular birbirine yapışmasın.
+            ctx.fillRect(x * S + 0.5, y * S + 0.5, S - 1, S - 1);
+          }
+        }
+      }
+      // Izgara, ölçüm biriminin kendisi olduğu için çizili ama geri planda.
+      ctx.strokeStyle = grid;
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (var i = 0; i <= N; i += 1) {
+        var p = Math.round(i * S) + 0.5;
+        ctx.moveTo(p, 0); ctx.lineTo(p, cv.height);
+        ctx.moveTo(0, p); ctx.lineTo(cv.width, p);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Merkezdeki 32x32 kırpma — modelin gerçekten kullandığı bölge.
+      var c0 = Math.round(((N - 32) / 2) * S) + 0.5;
+      var c1 = Math.round(32 * S);
+      ctx.strokeStyle = css("--on-panel-3") || "#5C6E7E";
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(c0, c0, c1, c1);
+      ctx.setLineDash([]);
+    }
+
+    draw(false);
+    if (reduce) {
+      draw(true);
+    } else {
+      setTimeout(function () { draw(true); }, 1400);
+    }
+
+    // Tema değişince yeniden çiz (renkler token'dan okunuyor).
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", function(){ draw(true); });
+    new MutationObserver(function () { draw(true); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  }
+
+  /* ---- karşılaştırma çubukları ---- */
+  var chart = document.getElementById("chart");
+  if (chart) {
+    var bars = [].slice.call(chart.querySelectorAll(".bar"));
+    var max = 0.0306;
+    function grow() {
+      bars.forEach(function (b) {
+        b.style.width = (parseFloat(b.getAttribute("data-v")) / max * 100) + "%";
+      });
+    }
+    if (reduce || !("IntersectionObserver" in window)) {
+      grow();
+    } else {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { grow(); io.disconnect(); }
+        });
+      }, { threshold: 0.4 });
+      io.observe(chart);
+    }
+  }
+})();
+</script>
